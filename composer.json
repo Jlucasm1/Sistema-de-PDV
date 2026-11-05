@@ -1,11 +1,11 @@
 {
-    "name": "pdvmaster/pdvmaster",
-    "description": "PDV MASTER - Sistema de Ponto de Venda",
+    "name": "jlucasm1/pdv-unigoias",
+    "description": "PDV UniGoiás - Sistema de Ponto de Venda",
     "type": "project",
     "license": "MIT",
     "authors": [
         {
-            "name": "PDV MASTER Dev",
+            "name": "PDV UniGoiás Dev",
             "email": "dev@pdvmaster.com.br"
         }
     ],

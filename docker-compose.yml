@@ -40,7 +40,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - pdv_db_data:/var/lib/mysql
+      - ./.docker/db/data:/var/lib/mysql
       - ./.docker/db/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
@@ -73,7 +73,3 @@ services:
 networks:
   pdv_network:
     driver: bridge
-
-volumes:
-  pdv_db_data:
-    driver: local

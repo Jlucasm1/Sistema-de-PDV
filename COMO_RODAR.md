@@ -1,4 +1,4 @@
-# 🚀 PDV MASTER — Como Rodar no VS Code + Docker
+# PDV UniGoiás - Como Rodar no VS Code + Docker
 
 ## 📋 Pré-requisitos
 

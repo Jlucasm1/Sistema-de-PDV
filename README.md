@@ -1,4 +1,4 @@
-# 🏪 PDV MASTER
+# PDV UniGoiás
 
 Sistema de Ponto de Venda profissional desenvolvido em PHP 8.1, com ambiente Docker Desktop completo e banco de dados MySQL 8.
 
@@ -18,8 +18,8 @@ Sistema de Ponto de Venda profissional desenvolvido em PHP 8.1, com ambiente Doc
 
 ### 1. Clone e configure o ambiente
 ```bash
-git clone <seu-repositorio> pdv-master
-cd pdv-master
+git clone <seu-repositorio> pdv-unigoias
+cd pdv-unigoias
 
 # Copiar variáveis de ambiente
 cp .env.example .env
@@ -35,7 +35,7 @@ docker-compose up -d --build
 
 | Serviço | URL | Credenciais |
 |---|---|---|
-| **PDV MASTER** | http://localhost:8080 | admin@pdvmaster.com.br / admin123 |
+| **PDV UniGoiás** | http://localhost:8080 | admin@pdvmaster.com.br / admin123 |
 | **PHPMyAdmin** | http://localhost:8081 | pdvmaster / pdvmaster@2024 |
 
 ---
@@ -158,3 +158,51 @@ docker-compose up -d
 ```
 
 ---
+
+---
+
+## Simulacao Fiscal (Mock) e Nota Fiscal
+
+Ao finalizar uma compra no PDV, o sistema agora simula impostos e emite uma **nota fiscal mock** automaticamente.
+
+### O que foi adicionado
+
+- Simulador de impostos (mock) com:
+  - ICMS (18%)
+  - PIS (1,65%)
+  - COFINS (7,6%)
+- Emissao de NF com:
+  - Modelo
+  - Serie
+  - Numero da NF
+  - Chave de acesso simulada
+  - Protocolo de autorizacao mock
+  - Itens da venda
+  - Base de calculo
+  - Total de impostos e total da nota
+
+### Fluxo no sistema
+
+- **PDV Diferencial**:
+  - Apos confirmar venda, abre modal com a nota fiscal mock
+  - Possui botão de impressão
+- **PDV Padrão**:
+  - Nota fiscal e gerada apos venda rapida
+  - Modal abre automaticamente no retorno da página
+  - Possui botão de impressão
+
+### Arquivos principais
+
+- `App/Services/Fiscal/ImpostoMockerInterface.php`
+- `App/Services/Fiscal/MokitoImpostoMocker.php`
+- `App/Services/Fiscal/NotaFiscalEmitter.php`
+- `App/Services/Fiscal/CupomFiscalEmitter.php`
+- `App/Controllers/PdvDiferencialController.php`
+- `App/Controllers/PdvPadraoController.php`
+- `public/js/venda/funcoesPdvAvancado.js`
+- `App/Views/pdv/diferencial.php`
+- `App/Views/pdv/padrao.php`
+
+### Observacao importante
+
+Esta implementação é de **homologação/desenvolvimento** e não substitui integração fiscal oficial (SEFAZ/NFC-e/SAT).

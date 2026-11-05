@@ -1,45 +1,83 @@
-<style>
-    .imagem-perfil {
-        width: 30px;
-        height: 30px;
-        object-fit: cover;
-        object-position: center;
-        border-radius: 50%;
+<?php
+
+// ================================================================
+// PDV MASTER — Front Controller Principal
+// ================================================================
+
+// ---- Controle de erros -----------------------------------------
+$dotenvPath = __DIR__ . '/.env';
+
+if (!file_exists($dotenvPath)) {
+    require_once __DIR__ . '/System/Bootstrap/install.php';
+    exit;
+}
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
+if (
+    ($_ENV['APP_ENV'] ?? 'local') !== 'production' &&
+    ($_ENV['APP_DISPLAY_ERRORS'] ?? 'true') === 'true'
+) {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0);
+    error_reporting(0);
+}
+
+// ---- Headers ---------------------------------------------------
+header('Content-Type: text/html; charset=UTF-8');
+
+// ---- Sessão ----------------------------------------------------
+System\Session\Session::start();
+System\Session\Token::verify();
+
+// ---- Timezone --------------------------------------------------
+date_default_timezone_set($_ENV['TIMEZONE'] ?? 'America/Sao_Paulo');
+
+// ---- Constantes globais ----------------------------------------
+$forwardedProtocol = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+$isHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+    || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
+    || $forwardedProtocol === 'https';
+$protocol = $isHttps ? 'https' : 'http';
+$host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+define('BASEURL', $protocol . '://' . $host . $basePath);
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH',  __DIR__);
+}
+
+// Extrair controller e method para helpers de menu ativo
+$uri   = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
+$parts = explode('/', $uri);
+define('CONTROLLER_NAME', ucfirst($parts[0] ?? 'Login') . 'Controller');
+define('METHOD_NAME',     $parts[1] ?? 'index');
+define('TOKEN', System\Session\Token::generate());
+
+if (System\Session\Session::has('logged')
+    && (int) System\Session\Session::get('idPerfil') === App\Config\ConfigPerfil::vendedor()
+    && !in_array(strtolower($parts[0] ?? ''), ['', 'catalogo', 'login'], true)
+) {
+    $ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest' || isset($_SERVER['HTTP_X_TAB_ID']);
+    if ($ajax) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['status' => false, 'message' => 'Vendedor tem acesso apenas ao catálogo e consulta de preços.']);
+        exit;
     }
-</style>
+    header('Location: ' . System\Session\Session::appendTabToUrl(BASEURL . '/catalogo'));
+    exit;
+}
 
-<div class="row">
+// ---- Roteador --------------------------------------------------
+use System\Route\GetRoute;
+use System\Route\SelectController;
 
-    <div class="card col-lg-12 content-div">
-        <div class="card-body">
-            <h5 class="card-title"><i class="fas fa-file-signature"></i> Log de acessos</h5>
-        </div>
-        <table id="example" class="table tabela-ajustada table-striped" style="width:100%">
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Empresa</th>
-                <th>Cliente</th>
-                <th>Data</th>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($logs as $log) : ?>
-                <tr>
-                    <td>
-                        <img class="imagem-perfil" src="<?php echo BASEURL . '/' . $log->usuario_imagem; ?>"
-                             title="<?php echo $log->usuario_nome; ?>">
-                    </td>
-                    <td><?php echo $log->empresa_nome; ?></td>
-                    <td><?php echo $log->usuario_nome; ?></td>
-                    <td><?php echo $log->hora . ' ' . $log->data; ?></td>
-                </tr>
-            <?php endforeach; ?>
-            <tfoot></tfoot>
-        </table>
+$route = new SelectController(new GetRoute());
 
-
-        <br>
-
-    </div>
-</div>
+require_once __DIR__ . '/routes/routes.php';

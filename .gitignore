@@ -1,0 +1,25 @@
+.env
+vendor/
+
+# Sistema operacional e editores
+.DS_Store
+Thumbs.db
+.idea/
+
+# Logs e arquivos temporarios
+*.log
+*.tmp
+*.bak
+debug_login.php
+teste_env.php
+safeLoad()
+
+# Dependencias e caches
+node_modules/
+.phpunit.cache/
+
+.docker/db/data/
+backups/
+
+# Pacotes gerados para a HostGator
+*.zip
