@@ -54,8 +54,30 @@
             <div class="form-group">
                 <label>Preço *</label>
                 <input type="text" class="form-control" name="preco" id="preco"
-                       placeholder="0,00"
+                       placeholder="0,00" oninput="atualizarMargemProduto()"
                        value="<?php echo isset($produto->preco) ? number_format((float)$produto->preco, 2, ',', '.') : ''; ?>">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Custo (compra)</label>
+                <input type="text" class="form-control" name="preco_compra" id="preco_compra"
+                       placeholder="0,00" oninput="atualizarMargemProduto()"
+                       value="<?php echo isset($produto->preco_compra) ? number_format((float)$produto->preco_compra, 2, ',', '.') : ''; ?>">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Preço mínimo de venda</label>
+                <input type="text" class="form-control" name="preco_minimo" id="preco_minimo"
+                       placeholder="0,00" oninput="atualizarMargemProduto()"
+                       value="<?php echo isset($produto->preco_minimo) ? number_format((float)$produto->preco_minimo, 2, ',', '.') : ''; ?>">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label>Margem</label>
+                <div id="info-margem" style="padding-top:8px;font-size:13px">-</div>
             </div>
         </div>
         <div class="col-md-3" id="div-qtd">
@@ -171,4 +193,27 @@
             });
     };
 })();
+</script>
+
+<script>
+function parseMoedaBR(v) {
+    v = String(v || '').replace(/[^\d,]/g, '').replace(',', '.');
+    return parseFloat(v) || 0;
+}
+function atualizarMargemProduto() {
+    var preco = parseMoedaBR($('#preco').val());
+    var custo = parseMoedaBR($('#preco_compra').val());
+    var minimo = parseMoedaBR($('#preco_minimo').val());
+    var el = $('#info-margem');
+    if (!preco || !custo) { el.text('-'); return; }
+    var mg = (preco - custo) / preco * 100;
+    var t = 'Tabela: ' + mg.toFixed(1) + '%';
+    if (minimo) {
+        var mm = (minimo - custo) / minimo * 100;
+        t += '<br>No mínimo: ' + mm.toFixed(1) + '%';
+        el.css('color', mm < 0 ? '#cc0000' : '#2d8a34');
+    }
+    el.html(t);
+}
+atualizarMargemProduto();
 </script>

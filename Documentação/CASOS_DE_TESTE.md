@@ -6,14 +6,15 @@ Este documento descreve cenarios de validacao para as principais funcionalidades
 
 ## 2. Ambiente de teste
 
-| Item | Valor |
-|---|---|
-| Aplicacao | PDV MASTER |
-| URL padrao | `http://localhost:8080` |
-| Banco | MySQL via Docker |
-| Usuario inicial | `admin@pdvmaster.com.br` |
-| Senha inicial | `admin123` |
-| Navegador sugerido | Chrome, Edge ou Firefox |
+| Item | Local (desenvolvimento) | Producao |
+|---|---|---|
+| Aplicacao | PDV MASTER | PDV MASTER |
+| URL | `http://localhost:8080` | `https://pdv.marianoprime.com` |
+| Infraestrutura | Docker (Apache + MySQL 8) | HostGator (cPanel, MySQL 5.7) + Cloudflare |
+| Usuario inicial | `admin@pdvmaster.com.br` / `admin123` | Credenciais definidas pelo administrador (nao documentadas) |
+| Navegador sugerido | Chrome, Edge ou Firefox | Chrome, Edge, Firefox; Safari e Chrome no celular |
+
+Testes em producao devem usar dados identificados como teste e ser removidos ao final (ver `IMPLANTACAO_HOSTGATOR.md`, secao 4.2).
 
 ## 3. Dados basicos
 
@@ -65,6 +66,14 @@ Este documento descreve cenarios de validacao para as principais funcionalidades
 | CT-035 | Alterar tipo de PDV | Usuario autorizado autenticado | Acessar configuracoes, alterar tipo de PDV e salvar | Sistema passa a usar configuracao selecionada | Manual | RF-020 |
 | CT-036 | Consultar logs de acesso | Usuario com permissao autenticado | Acessar `/logs` | Sistema lista registros de acesso disponiveis | Manual | RF-021 |
 | CT-037 | Abrir tela de criacao de conta externa | Ambiente disponivel | Acessar `/criarConta/index` | Tela de registro externo e exibida sem erro | Manual | RF-022 |
+| CT-045 | Pesquisar produto na consulta de precos | Produto com preco oficial e minimo cadastrado | Acessar `/catalogo`, pesquisar por nome ou codigo e selecionar o produto | Ficha mostra preco oficial, preco minimo e desconto maximo | Automatizado/Manual | RF-023 |
+| CT-046 | Simular preco abaixo do minimo | Produto selecionado no simulador | Informar preco final ou desconto que resulte em valor abaixo do minimo | Simulador indica que e necessaria autorizacao de gerente/administrador | Automatizado/Manual | RF-024 |
+| CT-047 | Simular compra com varios produtos | Pelo menos dois produtos cadastrados | Simular o primeiro produto e clicar em "Adicionar a compra"; repetir com outro produto; remover um item | Lista mostra cada item com quantidade e subtotal, total geral correto, remocao atualiza o total e nenhuma venda e registrada | Manual | RF-025 |
+| CT-048 | Cadastrar produto no catalogo | Usuario com permissao de gerenciar catalogo | Acessar `/catalogo/gerenciar`, clicar em "Novo produto", informar nome, preco oficial e preco minimo, salvar | Produto aparece na consulta de precos e o cadastro fica no historico | Automatizado/Manual | RF-026 |
+| CT-049 | Protecao do preco oficial | Produto cadastrado; vendedor com permissao de catalogo | Vendedor tenta alterar o preco oficial de produto existente; depois gerente altera | Alteracao do vendedor e negada; a do gerente e aceita e registrada no historico | Automatizado/Manual | RF-027 |
+| CT-050 | Conceder permissao de catalogo | Administrador autenticado; vendedor ativo | Acessar `/catalogo/permissao`, escolher o vendedor e conceder; vendedor entra no sistema | Item "Catalogo" aparece no menu do vendedor | Automatizado/Manual | RF-028 |
+| CT-051 | Permissao unica por empresa | Permissao concedida a um vendedor | Conceder a permissao a outro usuario da mesma empresa | Usuario anterior perde o acesso ao catalogo | Automatizado/Manual | RF-028 |
+| CT-052 | Menu restrito do vendedor | Usuario com perfil vendedor | Entrar como vendedor; conferir menu lateral e engrenagem; acessar `/home` pela URL | Menu mostra so Consulta de Precos, Catalogo (se autorizado) e Sair; `/home` redireciona para `/catalogo` | Manual | RF-003 |
 
 ## 5. Casos de teste nao funcionais
 
@@ -74,6 +83,11 @@ Este documento descreve cenarios de validacao para as principais funcionalidades
 | CT-039 | Inicializacao do banco | Subir ambiente limpo com volume novo | Tabelas e dados iniciais sao criados | Manual | RNF-002 |
 | CT-040 | Instalacao de dependencias | Executar `composer install` | Dependencias sao instaladas e autoload e gerado | Manual | RNF-003 |
 | CT-041 | Validacao de CSRF em formulario | Remover/alterar token de formulario protegido e enviar requisicao | Sistema rejeita ou nao processa requisicao invalida | Manual | RNF-004 |
+| CT-042 | Rotas em producao | Acessar `https://pdv.marianoprime.com/login`, `/catalogo` (sem login) e uma rota inexistente | `/login` exibe a tela de login; `/catalogo` redireciona para o login; rota inexistente exibe "Rota Nao encontrada!" (nunca erro 500 do Apache) | Manual | RNF-007 |
+| CT-043 | Arquivos protegidos em producao | Tentar acessar `https://pdv.marianoprime.com/.env` e `/App/` | Arquivos de configuracao e codigo nao sao servidos | Manual | RNF-007 |
+| CT-044 | HTTPS via Cloudflare | Acessar o sistema por `https://` e inspecionar links de CSS/JS | Pagina carrega com certificado valido e todos os recursos usam `https://` | Manual | RNF-008 |
+| CT-053 | Menu no celular | Abrir o sistema no Safari (iPhone) e no Chrome (Android), tocar no botao de menu, tocar fora e em um item | Menu abre e fecha rapidamente; fecha ao tocar fora ou escolher um item | Manual | RNF-009 |
+| CT-054 | Migracao de senha legada | Usuario com senha em SHA1 legado faz login | Login aceito e senha regravada em bcrypt (60 caracteres) | Manual | RNF-010 |
 
 ## 6. Testes automatizados existentes
 
@@ -95,10 +109,29 @@ Este documento descreve cenarios de validacao para as principais funcionalidades
 | Requisito | RF-013 |
 | Comando | `vendor/bin/phpunit tests/Unit/NotaFiscalEmitterTest.php` |
 
+### TA-003 - Catalogo de produtos
+
+| Campo | Descricao |
+|---|---|
+| Arquivo | `tests/Feature/CatalogoFeatureTest.php` |
+| Objetivo | Validar cadastro e pesquisas, historico de edicao, protecao do preco oficial, preco minimo nao maior que o oficial, exclusao logica preservando historico e vendas, isolamento entre empresas, codigos duplicados, regras de permissao por perfil, permissao unica por empresa e fluxos HTTP de vendedor, usuario autorizado e gerente. |
+| Requisitos | RF-023, RF-026, RF-027, RF-028 |
+| Comando | `docker exec pdv_master_app sh -lc 'cd /var/www/html && php vendor/bin/phpunit tests/Feature/CatalogoFeatureTest.php'` |
+
+### TA-004 - Calculo de precos
+
+| Campo | Descricao |
+|---|---|
+| Arquivo | `tests/Unit/PrecoCalculatorTest.php` |
+| Objetivo | Validar conversao de moeda para centavos, desconto maximo, simulacao por preco final, desconto em reais e percentual, preco igual ao minimo autorizado, preco abaixo do minimo bloqueado, produto sem preco minimo, precisao decimal e rejeicao de entradas invalidas. |
+| Requisito | RF-024 |
+| Comando | `docker exec pdv_master_app sh -lc 'cd /var/www/html && php vendor/bin/phpunit tests/Unit/PrecoCalculatorTest.php'` |
+
 ## 7. Criterios de aceite
 
 - Todos os casos criticos de login, PDV, caixa, venda e fiscal mock devem ser aprovados antes da entrega.
 - Casos de cadastro devem validar criacao, edicao e bloqueio de duplicidades.
 - Relatorios devem ser testados com periodo com dados e periodo sem dados.
 - Testes automatizados existentes devem executar sem falhas.
+- Antes de cada publicacao em producao, executar CT-042, CT-052 e CT-053 no endereco publico.
 - Falhas encontradas devem ser registradas com evidencia, passos de reproducao e resultado obtido.

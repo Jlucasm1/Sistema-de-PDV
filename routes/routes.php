@@ -85,6 +85,20 @@ $route->get('clienteEndereco/modalFormulario/{idCliente}/{idEnderecoCliente?}', 
 $route->get('clienteEndereco/buscarEnderecoViaCep/{cep?}', 'ClienteEnderecoController@buscarEnderecoViaCep');
 $route->get('clienteEndereco/modalVisualizarEnderecos/{idCliente}', 'ClienteEnderecoController@modalVisualizarEnderecos');
 
+// ---- Catálogo / Consulta de preços -------------------------------
+$route->get('catalogo',                              'CatalogoController@index');
+$route->get('catalogo/buscar',                       'CatalogoController@buscar');
+$route->get('catalogo/ficha/{id}',                   'CatalogoController@ficha');
+$route->post('catalogo/simular',                     'CatalogoController@simular');
+$route->get('catalogo/gerenciar',                    'CatalogoController@gerenciar');
+$route->get('catalogo/formulario/{idProduto?}',      'CatalogoController@formulario');
+$route->post('catalogo/salvar',                      'CatalogoController@salvar');
+$route->post('catalogo/excluir',                     'CatalogoController@excluir');
+$route->get('catalogo/historico/{idProduto?}',       'CatalogoController@historico');
+$route->get('catalogo/permissao',                    'CatalogoController@permissao');
+$route->post('catalogo/conceder',                    'CatalogoController@conceder');
+$route->post('catalogo/revogar',                     'CatalogoController@revogar');
+
 // ---- Relatórios --------------------------------------------------
 $route->get('relatorio',                           'RelatorioController@index');
 $route->get('relatorio/vendasPorPeriodo',          'RelatorioController@vendasPorPeriodo');

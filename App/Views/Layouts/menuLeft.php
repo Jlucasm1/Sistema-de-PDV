@@ -11,6 +11,7 @@ $tabUrl = static fn(string $rota): string => Session::appendTabToUrl(BASEURL . '
 <div class="sidebar-wrapper">
     <ul class="nav">
 
+        <?php if (!$isVendedor): ?>
         <li>
             <a href="<?= $tabUrl('home') ?>" class="<?php currentRouteFromMenu('home', 'inicioBorder') ?>">
                 <i class="fas fa-tachometer-alt"></i>
@@ -57,6 +58,25 @@ $tabUrl = static fn(string $rota): string => Session::appendTabToUrl(BASEURL . '
         </li>
         <?php endif; ?>
 
+        <?php endif; ?>
+
+        <li>
+            <a href="<?= $tabUrl('catalogo') ?>" class="<?php currentRouteFromMenu('catalogo', 'produtoBorder') ?>">
+                <i class="fas fa-tags"></i>
+                <p>Consulta de Preços</p>
+            </a>
+        </li>
+
+        <?php if ((new \App\Rules\CatalogoAcesso())->podeGerenciarCatalogo()): ?>
+        <li>
+            <a href="<?= $tabUrl('catalogo/gerenciar') ?>">
+                <i class="fas fa-book"></i>
+                <p>Catálogo</p>
+            </a>
+        </li>
+        <?php endif; ?>
+
+        <?php if (!$isVendedor): ?>
         <li>
             <a href="<?= $tabUrl('cliente') ?>" class="<?php currentRouteFromMenu('cliente', 'clienteBorder') ?>">
                 <i class="fas fa-user-tie"></i>
@@ -80,6 +100,7 @@ $tabUrl = static fn(string $rota): string => Session::appendTabToUrl(BASEURL . '
                 <p>Caixa</p>
             </a>
         </li>
+        <?php endif; ?>
         <?php endif; ?>
     </ul>
 </div>

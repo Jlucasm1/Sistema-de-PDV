@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
 
     # Arquivos e pastas que existem passam direto
     RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -7,5 +8,5 @@
     RewriteRule ^ - [L]
 
     # Todo o resto vai para index.php
-    RewriteRule ^ index.php [L]
+    RewriteRule ^ /index.php [QSA,L]
 </IfModule>

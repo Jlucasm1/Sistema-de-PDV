@@ -7,7 +7,9 @@ $idEmpresaSessao = Session::get('idEmpresa');
 $configPdv = !empty($idEmpresaSessao) ? (new ConfigPdv())->configPdv($idEmpresaSessao) : (object) [];
 $appName   = $_ENV['APPLICATION_NAME'] ?? 'PDV MASTER';
 $tabUrl = static fn(string $rota): string => Session::appendTabToUrl(BASEURL . '/' . ltrim($rota, '/'));
-$assetVersion = '20260518b';
+// Vendedor só acessa a consulta de preços e o catálogo
+$somenteCatalogo = (int) Session::get('idPerfil') === ConfigPerfil::vendedor();
+$assetVersion = '20261104b';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -172,15 +174,26 @@ $assetVersion = '20260518b';
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #E3F2FD; }
         ::-webkit-scrollbar-thumb { background: #90CAF9; border-radius: 3px; }
+        @media (max-width: 991px) {
+            .sidebar, .main-panel, #bodyClick {
+                -webkit-transition-duration: .18s !important;
+                transition-duration: .18s !important;
+            }
+            .navbar .navbar-toggle .bar1,
+            .navbar .navbar-toggle .bar3 {
+                -webkit-animation-duration: .18s !important;
+                animation-duration: .18s !important;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="wrapper">
 
     <!-- Sidebar -->
-    <div class="sidebar" data-color="blue" data-active-color="primary">
+    <div class="sidebar" id="app-sidebar" data-color="blue" data-active-color="primary">
         <div class="logo">
-            <a href="<?= $tabUrl('home') ?>" class="simple-text logo-normal">
+            <a href="<?= $tabUrl($somenteCatalogo ? 'catalogo' : 'home') ?>" class="simple-text logo-normal">
                 <i class="fas fa-cash-register" style="color:#90CAF9"></i>
                 &nbsp;<?= htmlspecialchars($appName) ?>
             </a>
@@ -195,13 +208,13 @@ $assetVersion = '20260518b';
             <div class="container-fluid">
                 <div class="navbar-wrapper">
                     <div class="navbar-toggle">
-                        <button type="button" class="navbar-toggler">
+                        <button type="button" class="navbar-toggler" aria-label="Abrir menu" aria-controls="app-sidebar" aria-expanded="false">
                             <span class="navbar-toggler-bar bar1"></span>
                             <span class="navbar-toggler-bar bar2"></span>
                             <span class="navbar-toggler-bar bar3"></span>
                         </button>
                     </div>
-                    <a class="navbar-brand" href="<?= $tabUrl('usuario') ?>">
+                    <a class="navbar-brand" href="<?= $tabUrl($somenteCatalogo ? 'catalogo' : 'usuario') ?>">
                         <?php $imgPerfil = Session::get('imagem'); ?>
                         <?php if ($imgPerfil): ?>
                             <img class="avatar-perfil" src="<?= BASEURL . '/' . $imgPerfil ?>">
@@ -231,9 +244,11 @@ $assetVersion = '20260518b';
                                 <i class="nc-icon nc-settings-gear-65"></i>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right">
+                                <?php if (!$somenteCatalogo): ?>
                                 <a class="dropdown-item" href="<?= $tabUrl('usuario') ?>">
-                                    <i class="fas fa-users"></i> <?= (int) Session::get('idPerfil') === ConfigPerfil::vendedor() ? 'Meu Perfil' : 'Usuários' ?>
+                                    <i class="fas fa-users"></i> Usuários
                                 </a>
+                                <?php endif; ?>
                                 <?php if (ConfigPerfil::isSuperAdmin((int) Session::get('idPerfil'))): ?>
                                     <a class="dropdown-item" href="<?= $tabUrl('empresa') ?>">
                                         <i class="fas fa-store"></i> Empresas
@@ -291,6 +306,51 @@ $assetVersion = '20260518b';
 <script src="<?= BASEURL ?>/js/select2.js?v=<?= $assetVersion ?>"></script>
 <script src="<?= BASEURL ?>/js/confirm.js?v=<?= $assetVersion ?>"></script>
 <script>
+(function () {
+    var toggle = document.querySelector('.navbar .navbar-toggle');
+    var button = toggle && toggle.querySelector('.navbar-toggler');
+    var sidebar = document.getElementById('app-sidebar');
+    if (!toggle || !button || !sidebar) return;
+
+    function fecharMenu() {
+        document.documentElement.classList.remove('nav-open');
+        toggle.classList.remove('toggled');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-label', 'Abrir menu');
+        var fundo = document.getElementById('bodyClick');
+        if (fundo) fundo.remove();
+    }
+
+    toggle.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (document.documentElement.classList.contains('nav-open')) {
+            fecharMenu();
+            return;
+        }
+
+        document.documentElement.classList.add('nav-open');
+        toggle.classList.add('toggled');
+        button.setAttribute('aria-expanded', 'true');
+        button.setAttribute('aria-label', 'Fechar menu');
+
+        var fundo = document.createElement('div');
+        fundo.id = 'bodyClick';
+        fundo.addEventListener('click', fecharMenu);
+        document.body.appendChild(fundo);
+    });
+
+    sidebar.addEventListener('click', function (event) {
+        if (event.target.closest('a')) fecharMenu();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') fecharMenu();
+    });
+})();
+</script>
+<script>
 $(function () {
     $('.campo-moeda').maskMoney({ prefix: 'R$ ', allowNegative: false, thousands: '.', decimal: ',', affixesStay: false });
 
@@ -334,8 +394,5 @@ $(function () {
 <?php endif; ?>
 </body>
 </html>
-
-
-
 
 

@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|
 | RF-001 | Permitir autenticacao de usuarios. | `/login`, `/login/logar`, `/login/logout` | `LoginController`, `Logged`, `Session` | CT-001, CT-002 | Implementado |
 | RF-002 | Permitir recuperacao de senha. | `/login/senha`, `/login/senha/recuperacao/{token}` | `Login/SenhaController`, `RecuperacaoDeSenha`, `SendEmail` | CT-003 | Implementado |
-| RF-003 | Controlar acesso por perfil de usuario. | Rotas protegidas por regras de perfil | `PerfilAcessoRule`, `ConfigPerfil`, `Usuario` | CT-004 | Implementado |
+| RF-003 | Controlar acesso por perfil de usuario; vendedor restrito a consulta de precos e catalogo. | Rotas protegidas por regras de perfil; redirecionamento do vendedor para `/catalogo` | `PerfilAcessoRule`, `ConfigPerfil`, `Usuario`, `index.php`, `menuLeft.php`, `default.php` | CT-004, CT-052 | Implementado |
 | RF-004 | Permitir cadastro, edicao, ativacao e desativacao de usuarios. | `/usuario`, `/usuario/save`, `/usuario/update`, `/usuario/ativarUsuario`, `/usuario/desativarUsuario` | `UsuarioController`, `Usuario`, `BuscaUsuariosService` | CT-005, CT-006 | Implementado |
 | RF-005 | Permitir cadastro, edicao, pesquisa e exclusao de produtos. | `/produto`, `/produto/save`, `/produto/update`, `/produto/pesquisarProdutoPorNome`, `/produto/pesquisarProdutoPorCodigoDeBarras`, `/produto/excluirProduto` | `ProdutoController`, `Produto`, `ProdutoCategoria` | CT-007, CT-008, CT-009 | Implementado |
 | RF-006 | Permitir cadastro e manutencao de clientes. | `/cliente`, `/cliente/save`, `/cliente/update`, `/cliente/ativarCliente`, `/cliente/desativarCliente` | `ClienteController`, `Cliente` | CT-010, CT-011 | Implementado |
@@ -36,17 +36,28 @@
 | RF-020 | Permitir configuracao do tipo de PDV. | `/configuracao`, `/configuracao/alterarConfigPdv` | `ConfiguracaoController`, `ConfigPdv`, `TipoPdv` | CT-035 | Implementado |
 | RF-021 | Permitir consulta de logs de acesso. | `/logs` | `LogAcessoController`, `LogAcesso` | CT-036 | Implementado |
 | RF-022 | Permitir registro externo/criacao de conta. | `/criarConta/index` | `CadastroExternoController` | CT-037 | Implementado |
+| RF-023 | Permitir consulta de precos com ficha comercial (preco oficial, minimo e desconto maximo). | `/catalogo`, `/catalogo/buscar`, `/catalogo/ficha/{id}` | `CatalogoController`, `CatalogoProdutoRepository` | CT-045, TA-003 | Implementado |
+| RF-024 | Simular negociacao por preco final, desconto em reais ou percentual, sinalizando preco abaixo do minimo. | `/catalogo/simular` | `CatalogoController`, `PrecoCalculator` | CT-046, TA-004 | Implementado |
+| RF-025 | Montar simulacao de compra com varios produtos, subtotais e total geral, sem registrar venda. | `/catalogo` (lista "Produtos da compra") | `App/Views/catalogo/consulta.php` | CT-047 | Implementado |
+| RF-026 | Gerenciar catalogo de produtos com historico de alteracoes e exclusao logica. | `/catalogo/gerenciar`, `/catalogo/formulario/{idProduto?}`, `/catalogo/salvar`, `/catalogo/excluir`, `/catalogo/historico/{idProduto?}` | `CatalogoController`, `CatalogoProdutoRepository`, `produtos_historico` | CT-048, CT-049, TA-003 | Implementado |
+| RF-027 | Proteger o preco oficial: informado no cadastro por quem gerencia o catalogo, alterado depois so por gerente/administrador. | `/catalogo/salvar` | `CatalogoAcesso`, `CatalogoController` | CT-049, TA-003 | Implementado |
+| RF-029 | Registrar valor de custo do produto e alertar quando o preco negociado estiver abaixo ou perto do custo (margem abaixo de 10%), sem expor o custo a vendedores sem permissao. | `/catalogo/salvar`, `/catalogo/simular`, `/catalogo/buscar` | `PrecoCalculator::avaliarCusto`, `CatalogoController`, `CatalogoProdutoRepository` | TA-004 | Implementado |
+| RF-028 | Conceder e revogar a permissao de gerenciar catalogo a um unico usuario por empresa. | `/catalogo/permissao`, `/catalogo/conceder`, `/catalogo/revogar` | `CatalogoPermissao`, `CatalogoAcesso` | CT-050, CT-051, TA-003 | Implementado |
 
 ## Requisitos nao funcionais
 
 | ID | Requisito | Evidencia no projeto | Testes relacionados | Situacao |
 |---|---|---|---|---|
-| RNF-001 | Executar em ambiente containerizado. | `docker-compose.yml`, `.docker/` | CT-038 | Implementado |
-| RNF-002 | Utilizar banco MySQL com inicializacao automatica. | `.docker/db/init/`, `Database/` | CT-039 | Implementado |
+| RNF-001 | Executar em ambiente containerizado para desenvolvimento local. | `docker-compose.yml`, `.docker/` | CT-038 | Implementado |
+| RNF-002 | Utilizar banco MySQL com inicializacao automatica (local). | `.docker/db/init/`, `Database/` | CT-039 | Implementado |
 | RNF-003 | Gerenciar dependencias por Composer. | `composer.json`, `composer.lock` | CT-040 | Implementado |
 | RNF-004 | Proteger formularios com CSRF. | `System/Session/Token.php` | CT-041 | Implementado |
-| RNF-005 | Permitir execucao de testes automatizados. | `tests/Unit`, `phpunit/phpunit` | TA-001, TA-002 | Parcial |
+| RNF-005 | Permitir execucao de testes automatizados. | `tests/Unit`, `tests/Feature`, `phpunit/phpunit` | TA-001 a TA-004 | Parcial |
 | RNF-006 | Gerar relatorios em formatos portaveis. | Dompdf e PhpSpreadsheet | CT-031, CT-032 | Implementado |
+| RNF-007 | Operar em producao em hospedagem compartilhada (HostGator/cPanel), com codigo e `.env` fora da pasta publica. | `public/index.php`, `public/.htaccess` (`RewriteBase /`), `.env.hostgator.example`, `IMPLANTACAO_HOSTGATOR.md` | CT-042, CT-043 | Implementado |
+| RNF-008 | Servir o sistema por HTTPS atras do proxy da Cloudflare. | Deteccao de `X-Forwarded-Proto` em `index.php`; DNS `pdv` com proxy | CT-044 | Implementado |
+| RNF-009 | Interface utilizavel em celular (Safari e Chrome), com menu responsivo rapido. | Script do menu e transicoes de 180 ms em `App/Views/Layouts/default.php` | CT-053 | Implementado |
+| RNF-010 | Armazenar senhas com bcrypt, migrando hashes legados no login. | `System/Auth/Auth.php`, `System/Helpers/simpleHelpers.php` | CT-001, CT-054 | Implementado |
 
 ## Testes automatizados existentes
 
@@ -54,6 +65,8 @@
 |---|---|---|---|
 | TA-001 | `tests/Unit/CupomFiscalEmitterTest.php` | Validar emissao de cupom fiscal mock com impostos simulados. | RF-012 |
 | TA-002 | `tests/Unit/NotaFiscalEmitterTest.php` | Validar emissao de nota fiscal mock com impostos simulados. | RF-013 |
+| TA-003 | `tests/Feature/CatalogoFeatureTest.php` | Validar cadastro, pesquisas, historico, exclusao logica, isolamento por empresa, codigos duplicados, permissoes por perfil, permissao unica por empresa e protecao do preco oficial (inclusive via HTTP). | RF-023, RF-026, RF-027, RF-028 |
+| TA-004 | `tests/Unit/PrecoCalculatorTest.php` | Validar conversao para centavos, desconto maximo, simulacao por preco/desconto/percentual, regra do preco minimo, precisao decimal e entradas invalidas. | RF-024 |
 
 ## Lacunas e recomendacoes
 
@@ -65,3 +78,7 @@
 | Cadastros | Sem testes automatizados para validacoes de produto, cliente e usuario. | Criar testes para campos obrigatorios, duplicidade e soft delete. |
 | Relatorios | Sem testes automatizados para filtros e exportacoes. | Criar testes para periodo valido, periodo sem vendas e geracao de arquivos. |
 | Docker | Sem teste automatizado de subida do ambiente. | Validar em pipeline com `docker-compose up` e health checks. |
+| Producao | Publicacao manual pelo cPanel, sem pipeline de deploy. | Manter o roteiro de `IMPLANTACAO_HOSTGATOR.md` e avaliar deploy automatizado (Git do cPanel ou SFTP). |
+| Banco de producao | `Database/database_hostgator.sql` desatualizado (sem dados e sem tabelas do catalogo; colunas legadas em `usuarios`). | Gerar novo script a partir do esquema local atual antes de nova instalacao. |
+| Simulador | Lista de varios produtos sem teste automatizado (comportamento em JavaScript). | Criar teste de interface (ex.: Playwright) para adicionar, remover e totalizar itens. |
+| Menu mobile | Sem teste automatizado em navegadores moveis. | Validar manualmente (CT-053) a cada mudanca de layout. |

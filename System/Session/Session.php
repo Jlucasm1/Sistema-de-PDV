@@ -70,12 +70,6 @@ class Session
 
     public static function logout(): void
     {
-        unset($_SESSION[self::TAB_BUCKET][self::$currentTabId]);
-
-        if (!empty($_SESSION[self::TAB_BUCKET])) {
-            return;
-        }
-
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $p = session_get_cookie_params();

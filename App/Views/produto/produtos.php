@@ -17,6 +17,7 @@
                 <th style="width:50px"></th>
                 <th>Nome</th>
                 <th>Preço</th>
+                <th>Mínimo</th>
                 <th>Em Vendas</th>
                 <th>Estoque</th>
                 <th style="text-align:right;padding-right:8px">
@@ -49,6 +50,7 @@
                     </td>
 
                     <td><strong>R$ <?php echo real($produto->preco); ?></strong></td>
+                    <td><?php echo ((float)($produto->preco_minimo ?? 0)) > 0 ? 'R$ '.real($produto->preco_minimo) : '-'; ?></td>
 
                     <td>
                         <?php if ($produto->mostrar_em_vendas): ?>

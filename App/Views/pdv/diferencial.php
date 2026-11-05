@@ -292,6 +292,3 @@ use System\HtmlComponents\Modal\Modal;
         </div>
     </div>
 </div>
-
-
-

@@ -112,8 +112,10 @@ CREATE TABLE IF NOT EXISTS `produtos` (
   `id_empresa` INT NOT NULL,
   `nome` VARCHAR(100) NOT NULL,
   `codigo` VARCHAR(100) DEFAULT NULL,
+  `codigo_interno` VARCHAR(50) DEFAULT NULL,
   `preco` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `preco_compra` DECIMAL(10,2) DEFAULT 0.00,
+  `preco_minimo` DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Menor preço de venda permitido (0 = sem limite)',
   `descricao` TEXT DEFAULT NULL,
   `imagem` TEXT DEFAULT NULL,
   `ativar_quantidade` TINYINT NOT NULL DEFAULT 0 COMMENT '1=Sim, 0=Não',
@@ -124,8 +126,43 @@ CREATE TABLE IF NOT EXISTS `produtos` (
   `deleted_at` TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_produto_empresa` (`id_empresa`),
+  KEY `idx_produto_nome` (`nome`),
+  KEY `idx_produto_codigo` (`codigo`),
+  KEY `idx_produto_empresa_codigo_interno` (`id_empresa`, `codigo_interno`),
   CONSTRAINT `fk_produto_empresa`
     FOREIGN KEY (`id_empresa`) REFERENCES `empresas` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------------------------------------------
+-- catalogo_permissoes / produtos_historico
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `catalogo_permissoes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `id_empresa` INT NOT NULL,
+  `id_usuario` INT NOT NULL,
+  `permissao` VARCHAR(60) NOT NULL DEFAULT 'gerenciar_catalogo_produtos',
+  `concedido_por` INT NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_catalogo_permissao_empresa` (`id_empresa`, `permissao`),
+  KEY `idx_catalogo_permissao_usuario` (`id_usuario`),
+  CONSTRAINT `fk_catalogo_permissao_usuario`
+    FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `produtos_historico` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `id_empresa` INT NOT NULL,
+  `id_produto` INT NOT NULL,
+  `id_usuario` INT NOT NULL,
+  `operacao` VARCHAR(20) NOT NULL,
+  `campo` VARCHAR(40) DEFAULT NULL,
+  `valor_anterior` TEXT DEFAULT NULL,
+  `valor_novo` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_hist_empresa_produto` (`id_empresa`, `id_produto`),
+  KEY `idx_hist_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------------------------------------------

@@ -31,6 +31,7 @@ use System\HtmlComponents\Modal\Modal;
                 <th style="width:44px"></th>
                 <th>Nome</th>
                 <th>Preço</th>
+                <th>Mínimo</th>
                 <th>Em Vendas</th>
                 <th>Estoque</th>
                 <th style="text-align:right;padding-right:12px">
@@ -53,6 +54,7 @@ use System\HtmlComponents\Modal\Modal;
                     </td>
                     <td><strong><?php echo e($produto->nome); ?></strong></td>
                     <td><strong>R$ <?php echo real($produto->preco); ?></strong></td>
+                    <td><?php echo ((float)($produto->preco_minimo ?? 0)) > 0 ? 'R$ '.real($produto->preco_minimo) : '-'; ?></td>
                     <td>
                         <?php if ($produto->mostrar_em_vendas): ?>
                             <span class="badge-sim"><i class="fas fa-check"></i> Sim</span>
@@ -111,18 +113,60 @@ var BASE = "<?php echo BASEURL; ?>";
 
 function abrirModal(id) {
     var url = BASE + "/produto/modalFormulario" + (id ? "/" + id : "");
+    var tabId = typeof getCurrentTabId === 'function' ? getCurrentTabId() : '';
+    if (tabId && typeof appendTabToUrl === 'function') {
+        url = appendTabToUrl(url, tabId);
+    }
     $("#modalProduto .modal-title").text(id ? "Editar Produto" : "Novo Produto");
     $("#conteudo-modal-produto").html("<div style='text-align:center;padding:40px'><i class='fas fa-spinner fa-spin fa-2x'></i></div>");
     $("#modalProduto").modal({backdrop: 'static'});
-    $("#conteudo-modal-produto").load(url);
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'html',
+        timeout: 15000,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Tab-Id': tabId
+        }
+    }).done(function (html) {
+        $("#conteudo-modal-produto").html(html);
+    }).fail(function (xhr, status) {
+        var mensagem = status === 'timeout'
+            ? 'O servidor demorou para responder. Verifique a conexão com o banco de dados e tente novamente.'
+            : (xhr.status === 401
+                ? 'Sua sessão expirou. Recarregue a página e entre novamente.'
+                : 'Não foi possível carregar o formulário. Recarregue a página e tente novamente.');
+        $("#conteudo-modal-produto").empty().append(
+            $("<div>", {class: 'alert alert-danger', text: mensagem})
+        );
+    });
 }
 
 function excluirProduto(id, nome) {
     if (!confirm('Excluir o produto "' + nome + '"?')) return false;
-    $.get(BASE + "/produto/excluirProduto/" + id, function (data) {
-        var obj = JSON.parse(data);
+    var url = BASE + "/produto/excluirProduto/" + id;
+    var tabId = typeof getCurrentTabId === 'function' ? getCurrentTabId() : '';
+    if (tabId && typeof appendTabToUrl === 'function') {
+        url = appendTabToUrl(url, tabId);
+    }
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'json',
+        timeout: 15000,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Tab-Id': tabId
+        }
+    }).done(function (obj) {
         if (obj.deletado) location.reload();
         else alert('Erro ao excluir: ' + (obj.error || 'tente novamente'));
+    }).fail(function (xhr, status) {
+        var mensagem = status === 'timeout'
+            ? 'O servidor demorou para responder. Tente novamente.'
+            : 'Não foi possível excluir o produto. Recarregue a página e tente novamente.';
+        alert(mensagem);
     });
     return false;
 }

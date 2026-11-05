@@ -1,6 +1,6 @@
 <?php
 $appName = $_ENV['APPLICATION_NAME'] ?? 'PDV MASTER';
-$assetVersion = '20260518b';
+$assetVersion = '20261104b';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -10,7 +10,7 @@ $assetVersion = '20260518b';
     <title><?= htmlspecialchars($appName) ?> — Login</title>
     <base href="<?= BASEURL ?>">
     <link rel="shortcut icon" href="<?= BASEURL ?>/img/favicon.png"/>
-    <link rel="stylesheet" href="<?= BASEURL ?>/css/bootstrap.css">
+    <link rel="stylesheet" href="<?= BASEURL ?>/assets/css/bootstrap.min.css?v=<?= $assetVersion ?>">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; }

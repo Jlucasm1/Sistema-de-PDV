@@ -40,7 +40,11 @@ System\Session\Token::verify();
 date_default_timezone_set($_ENV['TIMEZONE'] ?? 'America/Sao_Paulo');
 
 // ---- Constantes globais ----------------------------------------
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$forwardedProtocol = strtolower(trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+$isHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+    || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
+    || $forwardedProtocol === 'https';
+$protocol = $isHttps ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 define('BASEURL', $protocol . '://' . $host . $basePath);
@@ -54,6 +58,21 @@ $parts = explode('/', $uri);
 define('CONTROLLER_NAME', ucfirst($parts[0] ?? 'Login') . 'Controller');
 define('METHOD_NAME',     $parts[1] ?? 'index');
 define('TOKEN', System\Session\Token::generate());
+
+if (System\Session\Session::has('logged')
+    && (int) System\Session\Session::get('idPerfil') === App\Config\ConfigPerfil::vendedor()
+    && !in_array(strtolower($parts[0] ?? ''), ['', 'catalogo', 'login'], true)
+) {
+    $ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest' || isset($_SERVER['HTTP_X_TAB_ID']);
+    if ($ajax) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['status' => false, 'message' => 'Vendedor tem acesso apenas ao catálogo e consulta de preços.']);
+        exit;
+    }
+    header('Location: ' . System\Session\Session::appendTabToUrl(BASEURL . '/catalogo'));
+    exit;
+}
 
 // ---- Roteador --------------------------------------------------
 use System\Route\GetRoute;
